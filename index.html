@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	 <meta charset = "utf-8"/>
+	  <meta name = "viewport" content = "width=device-width, initial-scale=1"/>
+
+	 <title>
+		Web Mapping Assignment_3
+	 </title>
+
+		<!-- External Stylesheets -->
+		  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+
+      <style type = "text/css">
+      	h3 {color:green;}
+      </style>
+
+</head>
+
+<body>
+	<h3> <u>NAIROBI PUBLIC PRIMARY SCHOOLS</u> </h3>
+
+  <div id="controls">
+    <div id="form">
+      <form>
+        <p> (Choice Features) Show schools in:
+
+          <input type ="radio" name="filter" value="dagoretti">Dagoretti
+          <input type="radio" name="filter" value="embakasi">Embakasi
+          <input type="radio" name="filter" value="kamukunji">Kamukunji
+          <input type="radio" name="filter" value="kasarani">Kasarani
+          <input type="radio" name="filter" value="langata">Lang'ata
+          <input type="radio" name="filter" value="makadara">Makadara
+          <input type="radio" name="filter" value="starehe">Starehe
+          <input type="radio" name="filter" value="westlands">Westlands
+					<input type="radio" name="filter" value="all" checked>Show All
+
+      </form>
+			</div>
+
+			<div id="form">
+				<form action="">
+			    <input type="button" onclick="locateUser()" value="Find School Closest to Me">
+			  </form>
+			</div>
+
+		<div id="form">
+  <p>Alternatively, click on the map to find the five public schools to that location</p>
+  <form action="">
+    <input type="button" onclick="showAll()" value="Reset Map">
+  </form>
+</div>
+
+
+	   <!-- Add a Map div -->
+     <div id="map" style="width: 1500px; height: 570px"></div>
+	    <!-- Add the Leaflet JavaScript library -->
+	     <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+			 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+				<script>
+
+				// Create variable to hold map element, give initial settings to map
+			var map = L.map('map',{ center: [-1.24897, 36.85762], zoom: 12});
+
+				// Add OpenStreetMap tile layer to map element
+			L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+
+        // Disable double click
+      map.doubleClickZoom.disable();
+
+      //Global Variables
+			// variable to hold school locations
+      var Nairobi_Public_Primary_SchoolsLocations = null;
+			// variable to hold your location
+	 		var youAreHere = null;
+
+      //Database Queries
+      //Getting schools from their respective constituencies
+			var sqlQuery = "SELECT * FROM nairobi_public_primary_schools";
+      var sqlQueryDagoretti = "SELECT * FROM nairobi_public_primary_schools WHERE constituency='DAGORETTI'";
+      var sqlQueryEmbakasi = "SELECT * FROM nairobi_public_primary_schools WHERE constituency='EMBAKASI'";
+      var sqlQueryKamukunji = "SELECT * FROM nairobi_public_primary_schools WHERE constituency='KAMUKUNJI'";
+      var sqlQueryKasarani = "SELECT * FROM nairobi_public_primary_schools WHERE constituency='KASARANI'";
+      var sqlQueryLangata = "SELECT * FROM nairobi_public_primary_schools WHERE constituency='LANG'ATA'";
+      var sqlQueryMakadara = "SELECT * FROM nairobi_public_primary_schools WHERE constituency='MAKADARA'";
+      var sqlQueryStarehe = "SELECT * FROM nairobi_public_primary_schools WHERE constituency='STAREHE'";
+      var sqlQueryWestlands = "SELECT * FROM nairobi_public_primary_schools WHERE constituency='WESTLANDS'";
+
+			// Set CartoDB Username
+	    var cartoDBUserName = "shineb484";
+
+			// Function to add all schools
+			function showAll(){
+      if(map.hasLayer(Nairobi_Public_Primary_SchoolsLocations)||map.hasLayer(locationMarker)){
+        map.removeLayer(Nairobi_Public_Primary_SchoolsLocations);
+        map.removeLayer(locationMarker);
+      };
+      map.setView(new L.LatLng(-1.24897, 36.85762), 12);
+
+				// Get CARTO selection as GeoJSON and Add to Map
+	    $.getJSON("https://"+cartoDBUserName+".carto.com/api/v2/sql?format=GeoJSON&q="+sqlQuery, function(data) {
+	        Nairobi_Public_Primary_SchoolsLocations = L.geoJson(data,{
+	            onEachFeature: function (feature, layer) {
+	                layer.bindPopup('<p><b>' + feature.properties.name + '</b><br /><em>' + feature.properties.location + '</em></p>');
+	                layer.cartodb_id=feature.properties.cartodb_id;
+	            }
+	        }).addTo(map);
+	    });
+	};
+
+	// Run showAll function automatically when document loads
+	$( document ).ready(function() {
+  	showAll();
+	});
+
+	//Find 5 closest schools
+	// Set Global Variable that will hold your location
+    var myLocation = null;
+
+    // Set Global Variable that will hold the marker that goes at our location when found
+    var locationMarker = null;
+
+    // Set 'Your Location' icon
+    var redIcon = L.icon({
+      iconUrl: 'images/redIcon.png',
+      shadowUrl: 'images/marker-shadow.png',
+      iconAnchor: [13, 41]
+    });
+
+    // Function that will locate the user when called
+    function locateUser(){
+      map.locate({setView: true, maxZoom: 15});
+    };
+
+    // Map Event Listener listening for when the user location is found
+    map.on('locationfound', locationFound);
+
+    // Map Event Listener listening for when the user location is not found
+    map.on('locationerror', locationNotFound);
+
+		// Listen for a click event on the Map element
+		map.on('click', locationFound);
+
+    // Function that will run when the location of the user is found
+    function locationFound(e){
+      myLocation = e.latlng;
+      closestSchool();
+      locationMarker = L.marker(e.latlng, {icon: redIcon});
+      map.addLayer(locationMarker);
+    };
+
+    // Function that will run if the location of the user is not found
+    function locationNotFound(e){
+      alert(e.message);
+    };
+
+    // Function will find and load the five nearest coffee shops to a user location
+    function closestSchool(){
+      // Set SQL Query that will return five closest coffee shops
+      var sqlQueryClosest = "SELECT * FROM nairobi_public_primary_schools ORDER BY the_geom <-> ST_SetSRID(ST_MakePoint("+myLocation.lng+","+myLocation.lat+"), 4326) LIMIT 5";
+
+      // remove SchoolLocations if on map
+      if(map.hasLayer(Nairobi_Public_Primary_SchoolsLocations)){
+        map.removeLayer(Nairobi_Public_Primary_SchoolsLocations);
+      };
+
+      // remove locationMarker if on map
+      if(map.hasLayer(locationMarker)){
+        map.removeLayer(locationMarker);
+      };
+
+      // Get GeoJSON of five closest points to the user
+      $.getJSON("https://"+cartoDBUserName+".cartodb.com/api/v2/sql?format=GeoJSON&q="+sqlQueryClosest, function(data) {
+        Nairobi_Public_Primary_SchoolsLocations = L.geoJson(data,{
+          onEachFeature: function (feature, layer) {
+            layer.bindPopup('<p><b>' + feature.properties.name + '</b><br /><em>' + feature.properties.location	 + '</em></p>');
+            layer.cartodb_id=feature.properties.cartodb_id;
+          }
+        }).addTo(map);
+      });
+    };
+	// Function to Filter Dagoretti
+function showDagoretti(){
+  if(map.hasLayer(Nairobi_Public_Primary_SchoolsLocations)){
+    map.removeLayer(Nairobi_Public_Primary_SchoolsLocations);
+  };
+  $.getJSON("https://"+cartoDBUserName+".carto.com/api/v2/sql?format=GeoJSON&q="+sqlQueryDagoretti, function(data) {
+    Nairobi_Public_Primary_SchoolsLocations = L.geoJson(data,{
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup('<p><b>' + feature.properties.name + '</b><br /><em>' + feature.properties.location + '</em></p>');
+        layer.cartodb_id=feature.properties.cartodb_id;
+      }
+    }).addTo(map);
+  });
+};
+
+
+// Function to Filter Embakasi
+function showEmbakasi(){
+if(map.hasLayer(Nairobi_Public_Primary_SchoolsLocations)){
+	map.removeLayer(Nairobi_Public_Primary_SchoolsLocations);
+};
+$.getJSON("https://"+cartoDBUserName+".carto.com/api/v2/sql?format=GeoJSON&q="+sqlQueryEmbakasi, function(data) {
+	Nairobi_Public_Primary_SchoolsLocations = L.geoJson(data,{
+		onEachFeature: function (feature, layer) {
+			layer.bindPopup('<p><b>' + feature.properties.name + '</b><br /><em>' + feature.properties.location + '</em></p>');
+			layer.cartodb_id=feature.properties.cartodb_id;
+		}
+	}).addTo(map);
+});
+};
+
+// Function to Filter Kamukunji
+function showKamukunji(){
+if(map.hasLayer(Nairobi_Public_Primary_SchoolsLocations)){
+	map.removeLayer(Nairobi_Public_Primary_SchoolsLocations);
+};
+$.getJSON("https://"+cartoDBUserName+".carto.com/api/v2/sql?format=GeoJSON&q="+sqlQueryKamukunji, function(data) {
+	Nairobi_Public_Primary_SchoolsLocations = L.geoJson(data,{
+		onEachFeature: function (feature, layer) {
+			layer.bindPopup('<p><b>' + feature.properties.name + '</b><br /><em>' + feature.properties.location + '</em></p>');
+			layer.cartodb_id=feature.properties.cartodb_id;
+		}
+	}).addTo(map);
+});
+};
+
+// Function to Filter Kasarani
+function showKasarani(){
+if(map.hasLayer(Nairobi_Public_Primary_SchoolsLocations)){
+	map.removeLayer(Nairobi_Public_Primary_SchoolsLocations);
+};
+$.getJSON("https://"+cartoDBUserName+".carto.com/api/v2/sql?format=GeoJSON&q="+sqlQueryKasarani, function(data) {
+	Nairobi_Public_Primary_SchoolsLocations = L.geoJson(data,{
+		onEachFeature: function (feature, layer) {
+			layer.bindPopup('<p><b>' + feature.properties.name + '</b><br /><em>' + feature.properties.location + '</em></p>');
+			layer.cartodb_id=feature.properties.cartodb_id;
+		}
+	}).addTo(map);
+});
+};
+
+// Function to Filter Lang'ata
+function showLangata(){
+if(map.hasLayer(Nairobi_Public_Primary_SchoolsLocations)){
+	map.removeLayer(Nairobi_Public_Primary_SchoolsLocations);
+};
+$.getJSON("https://"+cartoDBUserName+".carto.com/api/v2/sql?format=GeoJSON&q="+sqlQueryLangata, function(data) {
+	Nairobi_Public_Primary_SchoolsLocations = L.geoJson(data,{
+		onEachFeature: function (feature, layer) {
+			layer.bindPopup('<p><b>' + feature.properties.name + '</b><br /><em>' + feature.properties.location + '</em></p>');
+			layer.cartodb_id=feature.properties.cartodb_id;
+		}
+	}).addTo(map);
+});
+};
+
+// Function to Filter Makadara
+function showMakadara(){
+if(map.hasLayer(Nairobi_Public_Primary_SchoolsLocations)){
+	map.removeLayer(Nairobi_Public_Primary_SchoolsLocations);
+};
+$.getJSON("https://"+cartoDBUserName+".carto.com/api/v2/sql?format=GeoJSON&q="+sqlQueryMakadara, function(data) {
+	Nairobi_Public_Primary_SchoolsLocations = L.geoJson(data,{
+		onEachFeature: function (feature, layer) {
+			layer.bindPopup('<p><b>' + feature.properties.name + '</b><br /><em>' + feature.properties.location + '</em></p>');
+			layer.cartodb_id=feature.properties.cartodb_id;
+		}
+	}).addTo(map);
+});
+};
+
+// Function to Filter Starehe
+function showStarehe(){
+if(map.hasLayer(Nairobi_Public_Primary_SchoolsLocations)){
+	map.removeLayer(Nairobi_Public_Primary_SchoolsLocations);
+};
+$.getJSON("https://"+cartoDBUserName+".carto.com/api/v2/sql?format=GeoJSON&q="+sqlQueryStarehe, function(data) {
+	Nairobi_Public_Primary_SchoolsLocations = L.geoJson(data,{
+		onEachFeature: function (feature, layer) {
+			layer.bindPopup('<p><b>' + feature.properties.name + '</b><br /><em>' + feature.properties.location + '</em></p>');
+			layer.cartodb_id=feature.properties.cartodb_id;
+		}
+	}).addTo(map);
+});
+};
+
+// Function to Filter Westlands
+function showWestlands(){
+if(map.hasLayer(Nairobi_Public_Primary_SchoolsLocations)){
+	map.removeLayer(Nairobi_Public_Primary_SchoolsLocations);
+};
+$.getJSON("https://"+cartoDBUserName+".carto.com/api/v2/sql?format=GeoJSON&q="+sqlQueryWestlands, function(data) {
+	Nairobi_Public_Primary_SchoolsLocations = L.geoJson(data,{
+		onEachFeature: function (feature, layer) {
+			layer.bindPopup('<p><b>' + feature.properties.name + '</b><br /><em>' + feature.properties.location + '</em></p>');
+			layer.cartodb_id=feature.properties.cartodb_id;
+		}
+	}).addTo(map);
+});
+};
+
+	// Event Listeners
+$('input[value=dagoretti]').click(function(){
+  showDagoretti();
+});
+
+$('input[value=embakasi]').click(function(){
+  showEmbakasi();
+});
+
+$('input[value=kamukunji]').click(function(){
+  showKamukunji();
+});
+
+$('input[value=kasarani]').click(function(){
+  showKasarani();
+});
+
+$('input[value=langata]').click(function(){
+  showLangata();
+});
+
+$('input[value=makadara]').click(function(){
+  showMakadara();
+});
+
+$('input[value=starehe]').click(function(){
+  showStarehe();
+});
+
+$('input[value=westlands]').click(function(){
+  showWestlands();
+});
+
+$('input[value=all]').click(function(){
+  showAll();
+});
+
+	</script>
+
+</body>
+
+</html>
