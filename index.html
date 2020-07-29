@@ -14,62 +14,88 @@
 		  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
 
       <style type = "text/css">
-      	h3 {color:green;}
+      	h2 {color:green;}
+				body {
+    			margin: 0;
+    			width: 100vw;
+    			height: 100vh;
+				}
+
       </style>
 
 </head>
 
 <body>
-	<h3> <u>NAIROBI PUBLIC PRIMARY SCHOOLS</u> </h3>
+	<h2> <u>NAIROBI PUBLIC PRIMARY SCHOOLS</u> </h2>
 
-  <div id="controls">
-    <div id="form">
-      <form>
-        <p> (Choice Features) Show schools in:
+      <div id="controls" style="float:right; width:30%;">
+        <div id="form">
+              <form>
+              Show schools in:
+                  <br>
+                  <input type ="radio" name="filter" value="dagoretti">Dagoretti<br>
+                  <input type="radio" name="filter" value="embakasi">Embakasi<br>
+                  <input type="radio" name="filter" value="kamukunji">Kamukunji<br>
+                  <input type="radio" name="filter" value="kasarani">Kasarani<br>
+                  <input type="radio" name="filter" value="langata">Lang'ata<br>
+                  <input type="radio" name="filter" value="makadara">Makadara<br>
+                  <input type="radio" name="filter" value="starehe">Starehe<br>
+                  <input type="radio" name="filter" value="westlands">Westlands<br>
+        					<input type="radio" name="filter" value="all" checked>Show All<br>
 
-          <input type ="radio" name="filter" value="dagoretti">Dagoretti
-          <input type="radio" name="filter" value="embakasi">Embakasi
-          <input type="radio" name="filter" value="kamukunji">Kamukunji
-          <input type="radio" name="filter" value="kasarani">Kasarani
-          <input type="radio" name="filter" value="langata">Lang'ata
-          <input type="radio" name="filter" value="makadara">Makadara
-          <input type="radio" name="filter" value="starehe">Starehe
-          <input type="radio" name="filter" value="westlands">Westlands
-					<input type="radio" name="filter" value="all" checked>Show All
+                </form>
+    			       </div>
 
-      </form>
-			</div>
+      			  <div id="form" style = "align: left">
+      				      <form action="">
+                <br>
+      			         <input type="button" onclick="locateUser()" value="Find School Closest to Me">
+      			          </form>
+      			           </div>
 
-			<div id="form">
-				<form action="">
-			    <input type="button" onclick="locateUser()" value="Find School Closest to Me">
-			  </form>
-			</div>
+    		                 <div id="form" style = "align: right">
+                           <p>Alternatively, click on the map to find the five public schools to that location</p>
+                           <form action="">
+                             <br>
+                             <input type="button" onclick="showAll()" value="Reset Map">
+                           </form>
+                          </div>
 
-		<div id="form">
-  <p>Alternatively, click on the map to find the five public schools to that location</p>
-  <form action="">
-    <input type="button" onclick="showAll()" value="Reset Map">
-  </form>
-</div>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+                            <br>
+
+                            <p>
+                              NAME:    MBURU EILEEN<br>
+                              REG NO:  ENC222-0356/2017<br>
+                              COURSE:  BSc. GIS
+                              </p>
+
+                            </div>
 
 
-	   <!-- Add a Map div -->
-     <div id="map" style="width: 1500px; height: 570px"></div>
-	    <!-- Add the Leaflet JavaScript library -->
-	     <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
-			 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+                          <!-- Add a Map div -->
+                            <div id="map" style="width: 1050px; height: 580px"></div>
+                              <!-- Add the Leaflet JavaScript library -->
+                              <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+                              <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
-				<script>
+                              <script>
 
-				// Create variable to hold map element, give initial settings to map
-			var map = L.map('map',{ center: [-1.24897, 36.85762], zoom: 12});
+                         // Create variable to hold map element, give initial settings to map
+                         var map = L.map('map',{ center: [-1.24897, 36.85762], zoom: 12});
 
-				// Add OpenStreetMap tile layer to map element
-			L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+                         // Add OpenStreetMap tile layer to map element
+                         L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
 
-        // Disable double click
-      map.doubleClickZoom.disable();
+                         // Disable double click
+                         map.doubleClickZoom.disable();
+
 
       //Global Variables
 			// variable to hold school locations
